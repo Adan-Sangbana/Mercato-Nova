@@ -1,0 +1,114 @@
+CREATE DATABASE IF NOT EXISTS mercato_nova;
+USE mercato_nova;
+
+CREATE TABLE UTILISATEUR (
+    id_utilisateur INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    mot_de_passe_hash VARCHAR(255) NOT NULL,
+    pseudo VARCHAR(100) NOT NULL UNIQUE,
+    role VARCHAR(50) NOT NULL DEFAULT 'acheteur',
+    date_inscription DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE CATEGORIE (
+    id_categorie INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    id_parent INT NULL,
+    FOREIGN KEY (id_parent) REFERENCES CATEGORIE(id_categorie) ON DELETE SET NULL
+);
+
+CREATE TABLE ANNONCE (
+    id_annonce INT AUTO_INCREMENT PRIMARY KEY,
+    id_vendeur INT NOT NULL,
+    id_categorie INT NOT NULL,
+    titre VARCHAR(255) NOT NULL,
+    description TEXT,
+    prix DECIMAL(10, 2) NOT NULL,
+    mode_vente VARCHAR(50) NOT NULL,
+    statut VARCHAR(50) NOT NULL DEFAULT 'active',
+    date_publication DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_vendeur) REFERENCES UTILISATEUR(id_utilisateur) ON DELETE CASCADE,
+    FOREIGN KEY (id_categorie) REFERENCES CATEGORIE(id_categorie) ON DELETE RESTRICT
+);
+
+CREATE TABLE PANIER (
+    id_panier INT AUTO_INCREMENT PRIMARY KEY,
+    id_utilisateur INT NOT NULL,
+    date_maj DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_utilisateur) REFERENCES UTILISATEUR(id_utilisateur) ON DELETE CASCADE
+);
+
+CREATE TABLE LIGNE_PANIER (
+    id_ligne INT AUTO_INCREMENT PRIMARY KEY,
+    id_panier INT NOT NULL,
+    id_annonce INT NOT NULL,
+    prix_convenu DECIMAL(10, 2) NOT NULL,
+    quantite INT NOT NULL DEFAULT 1,
+    FOREIGN KEY (id_panier) REFERENCES PANIER(id_panier) ON DELETE CASCADE,
+    FOREIGN KEY (id_annonce) REFERENCES ANNONCE(id_annonce) ON DELETE CASCADE
+);
+
+CREATE TABLE ENCHERE (
+    id_enchere INT AUTO_INCREMENT PRIMARY KEY,
+    id_annonce INT NOT NULL,
+    prix_depart DECIMAL(10, 2) NOT NULL,
+    pas_min DECIMAL(10, 2) NOT NULL DEFAULT 1.00,
+    date_fin DATETIME NOT NULL,
+    id_gagnant INT NULL,
+    FOREIGN KEY (id_annonce) REFERENCES ANNONCE(id_annonce) ON DELETE CASCADE,
+    FOREIGN KEY (id_gagnant) REFERENCES UTILISATEUR(id_utilisateur) ON DELETE SET NULL
+);
+
+CREATE TABLE OFFRE_ENCHERE (
+    id_offre INT AUTO_INCREMENT PRIMARY KEY,
+    id_enchere INT NOT NULL,
+    id_encherisseur INT NOT NULL,
+    montant DECIMAL(10, 2) NOT NULL,
+    horodatage DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_enchere) REFERENCES ENCHERE(id_enchere) ON DELETE CASCADE,
+    FOREIGN KEY (id_encherisseur) REFERENCES UTILISATEUR(id_utilisateur) ON DELETE CASCADE
+);
+
+CREATE TABLE NEGOCIATION (
+    id_negociation INT AUTO_INCREMENT PRIMARY KEY,
+    id_annonce INT NOT NULL,
+    id_acheteur INT NOT NULL,
+    statut VARCHAR(50) NOT NULL DEFAULT 'en_cours',
+    echanges_restants INT NOT NULL DEFAULT 5,
+    date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_annonce) REFERENCES ANNONCE(id_annonce) ON DELETE CASCADE,
+    FOREIGN KEY (id_acheteur) REFERENCES UTILISATEUR(id_utilisateur) ON DELETE CASCADE
+);
+
+CREATE TABLE MESSAGE_NEGOCIATION (
+    id_message INT AUTO_INCREMENT PRIMARY KEY,
+    id_negociation INT NOT NULL,
+    id_emetteur INT NOT NULL,
+    type_message VARCHAR(50) NOT NULL,
+    montant_propose DECIMAL(10, 2) NOT NULL,
+    horodatage DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_negociation) REFERENCES NEGOCIATION(id_negociation) ON DELETE CASCADE,
+    FOREIGN KEY (id_emetteur) REFERENCES UTILISATEUR(id_utilisateur) ON DELETE CASCADE
+);
+
+CREATE TABLE TRANSACTION (
+    id_transaction INT AUTO_INCREMENT PRIMARY KEY,
+    id_acheteur INT NOT NULL,
+    id_annonce INT NOT NULL,
+    montant_final DECIMAL(10, 2) NOT NULL,
+    origine VARCHAR(50) NOT NULL,
+    statut VARCHAR(50) NOT NULL DEFAULT 'validee',
+    date_transaction DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_acheteur) REFERENCES UTILISATEUR(id_utilisateur) ON DELETE CASCADE,
+    FOREIGN KEY (id_annonce) REFERENCES ANNONCE(id_annonce) ON DELETE CASCADE
+);
+
+CREATE TABLE NOTIFICATION (
+    id_notification INT AUTO_INCREMENT PRIMARY KEY,
+    id_destinataire INT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    contenu TEXT NOT NULL,
+    lu BOOLEAN NOT NULL DEFAULT FALSE,
+    date_creation DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_destinataire) REFERENCES UTILISATEUR(id_utilisateur) ON DELETE CASCADE
+);
