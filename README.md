@@ -1,2 +1,2 @@
 # Mercato-Nova
-Projet pisine 2026
+Projet piscine 2026
